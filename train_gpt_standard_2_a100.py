@@ -1178,7 +1178,8 @@ def distributed_data_generator(filename_pattern: str, num_tokens: int, max_seq_l
         if align_to_bos:
             try:
                 seq_starts, seq_ends = finder.next_batch(num_tokens_local, max_seq_len)
-                starts_rank, ends_rank = seq_starts[rank], seq_ends[rank]
+                starts_rank = [int(idx) for idx in seq_starts[rank]]
+                ends_rank = [int(idx) for idx in seq_ends[rank]]
                 start_idxs = torch.tensor(starts_rank, dtype=torch.long)
                 end_idxs = torch.tensor(ends_rank, dtype=torch.long)
             except StopIteration:
