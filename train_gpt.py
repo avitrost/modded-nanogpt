@@ -1398,6 +1398,14 @@ initial_state = dict(model=copy.deepcopy(model.state_dict()),
 train_loader = distributed_data_generator(args.train_files, args.train_batch_size, args.train_max_seq_len, grad_accum_steps=grad_accum_steps)
 ws_schedule = list(args.ws_schedule) + [args.ws_final]
 ws_long = ws_schedule[0]
+
+# Warmup polar_express compilation explicitly to avoid hanging during first optimizer step
+# Create a dummy gradient tensor with typical shape and compile polar_express
+print("Warming up polar_express compilation...")
+dummy_grad = torch.randn(1024, 512, device=device, dtype=torch.bfloat16)
+_ = polar_express(dummy_grad)  # Trigger compilation
+print("polar_express compilation complete.")
+
 for step in range(warmup_steps):
     inputs, targets, cum_seqlens = next(train_loader)
     # each window size is a new graph, need to warm up each with Yarn.attn_scale

@@ -851,7 +851,7 @@ class CausalSelfAttention(nn.Module):
         self.attn_gate = CastedLinear(12, num_heads)
         # label module to enable custom optimizer sizing
         self.attn_gate.weight.label = 'attn_gate'
-        self.orthogonal_basis = orthogonal(nn.Linear(self.head_dim, self.head_dim))  # orthogonal parametrization
+        # self.orthogonal_basis = orthogonal(nn.Linear(self.head_dim, self.head_dim))  # orthogonal parametrization
 
     def forward(self, x: Tensor, attn_args: AttnArgs):
         B, T = x.size(0), x.size(1) # batch size, sequence length
@@ -864,7 +864,7 @@ class CausalSelfAttention(nn.Module):
 
         q, k, v = F.linear(x, self.qkvo_w.view(4, self.hdim, self.dim)[:3].flatten(end_dim=1).type_as(x)).view(B, T, 3 * self.num_heads, self.head_dim).chunk(3, dim=-2)
         q, k = norm(q), norm(k) # QK norm @Grad62304977
-        q, k = self.orthogonal_basis(q), self.orthogonal_basis(k)
+        # q, k = self.orthogonal_basis(q), self.orthogonal_basis(k)
         q, k = rotary(q, cos, sin), rotary(k, cos, sin)
         if ve is not None:
             v = sa_lambdas[0] * v + sa_lambdas[1] * ve.view_as(v) # @ KoszarskyB & @Grad62304977

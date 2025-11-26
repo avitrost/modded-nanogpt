@@ -24,6 +24,7 @@ import torch._dynamo as dynamo
 import torch.distributed as dist
 import torch.nn.functional as F
 from torch.nn.utils.parametrizations import orthogonal
+from flash_attn import flash_attn_varlen_func
 
 # torch._inductor.config.coordinate_descent_tuning = True # we have banned this flag for new records because it causes compilation to take 30min
 import triton
@@ -873,9 +874,7 @@ class CausalSelfAttention(nn.Module):
         max_len = args.train_max_seq_len if self.training else (args.val_batch_size // (grad_accum_steps * world_size))
 
         # use flash_attn over flex_attn @varunneal. flash_attn_varlen suggested by @YouJiacheng
-        # Disable dynamo for flash_attn on A100 (compute capability 8.0) - FA3 fake tensor check requires 9.0+
-        with dynamo.disable():
-            y = flash_attn_interface.flash_attn_varlen_func(q[0], k[0], v[0], cu_seqlens_q=seqlens, cu_seqlens_k=seqlens,
+        y = flash_attn_varlen_func(q[0], k[0], v[0], cu_seqlens_q=seqlens, cu_seqlens_k=seqlens,
                                                             max_seqlen_q=max_len, max_seqlen_k=max_len,
                                                             causal=True, softmax_scale=attn_scale, window_size=(bm_size, 0))
         y = y.view(B, T, self.num_heads, self.head_dim)
