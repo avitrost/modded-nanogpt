@@ -1185,7 +1185,7 @@ def distributed_data_generator(filename_pattern: str, num_tokens: int, max_seq_l
                 preloader.start()
                 continue
 
-            buf = torch.cat([tokens[i:j] for i, j in zip(start_idxs, end_idxs)])
+            buf = torch.cat([tokens[i.item():j.item()] for i, j in zip(start_idxs, end_idxs)])
             _inputs = buf[:-1]
             _targets = buf[1:]
             end_idxs[-1] -= 1  # last document was too long to account for _targets offset
