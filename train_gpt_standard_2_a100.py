@@ -1178,14 +1178,16 @@ def distributed_data_generator(filename_pattern: str, num_tokens: int, max_seq_l
         if align_to_bos:
             try:
                 seq_starts, seq_ends = finder.next_batch(num_tokens_local, max_seq_len)
-                start_idxs, end_idxs = torch.tensor(seq_starts[rank]), torch.tensor(seq_ends[rank])
+                starts_rank, ends_rank = seq_starts[rank], seq_ends[rank]
+                start_idxs = torch.tensor(starts_rank, dtype=torch.long)
+                end_idxs = torch.tensor(ends_rank, dtype=torch.long)
             except StopIteration:
                 # This shard is exhausted, load the next one in the next loop iteration.
                 tokens, finder = preloader.get()
                 preloader.start()
                 continue
 
-            buf = torch.cat([tokens[i.item():j.item()] for i, j in zip(start_idxs, end_idxs)])
+            buf = torch.cat([tokens[s:e] for s, e in zip(starts_rank, ends_rank)])
             _inputs = buf[:-1]
             _targets = buf[1:]
             end_idxs[-1] -= 1  # last document was too long to account for _targets offset
