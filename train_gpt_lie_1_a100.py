@@ -1185,7 +1185,7 @@ def distributed_data_generator(filename_pattern: str, num_tokens: int, max_seq_l
                 preloader.start()
                 continue
 
-            buf = torch.cat([tokens[i.item():j.item()] for i, j in zip(start_idxs, end_idxs)])
+            buf = torch.cat([tokens[i:j] for i, j in zip(start_idxs, end_idxs)])
             _inputs = buf[:-1]
             _targets = buf[1:]
             end_idxs[-1] -= 1  # last document was too long to account for _targets offset
@@ -1233,7 +1233,7 @@ class Hyperparameters:
     val_files: str = "data/fineweb10B/fineweb_val_*.bin" # input .bin to eval validation loss on
     val_tokens: int = 10485760 # how many tokens of validation data? it's important to keep this fixed for consistent comparisons
     train_batch_size: int = 2048 * 16 * 8
-    train_max_seq_len: int = 128 * 16 * 1/2
+    train_max_seq_len: int = 128 * 16 // 2
     val_batch_size: int = 4 * 64 * 1024 * 8
     # optimization
     num_scheduled_iterations: int = 2185  # number of steps to complete lr and ws schedule

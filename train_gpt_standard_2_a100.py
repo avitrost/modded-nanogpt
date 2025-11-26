@@ -1178,17 +1178,14 @@ def distributed_data_generator(filename_pattern: str, num_tokens: int, max_seq_l
         if align_to_bos:
             try:
                 seq_starts, seq_ends = finder.next_batch(num_tokens_local, max_seq_len)
-                starts_rank = [int(idx) for idx in seq_starts[rank]]
-                ends_rank = [int(idx) for idx in seq_ends[rank]]
-                start_idxs = torch.tensor(starts_rank, dtype=torch.long)
-                end_idxs = torch.tensor(ends_rank, dtype=torch.long)
+                start_idxs, end_idxs = torch.tensor(seq_starts[rank]), torch.tensor(seq_ends[rank])
             except StopIteration:
                 # This shard is exhausted, load the next one in the next loop iteration.
                 tokens, finder = preloader.get()
                 preloader.start()
                 continue
 
-            buf = torch.cat([tokens[s:e] for s, e in zip(starts_rank, ends_rank)])
+            buf = torch.cat([tokens[i:j] for i, j in zip(start_idxs, end_idxs)])
             _inputs = buf[:-1]
             _targets = buf[1:]
             end_idxs[-1] -= 1  # last document was too long to account for _targets offset
@@ -1236,7 +1233,7 @@ class Hyperparameters:
     val_files: str = "data/fineweb10B/fineweb_val_*.bin" # input .bin to eval validation loss on
     val_tokens: int = 10485760 # how many tokens of validation data? it's important to keep this fixed for consistent comparisons
     train_batch_size: int = 2048 * 16 * 8
-    train_max_seq_len: int = 128 * 16 * 1/2
+    train_max_seq_len: int = 128 * 16 // 2
     val_batch_size: int = 4 * 64 * 1024 * 8
     # optimization
     num_scheduled_iterations: int = 2185  # number of steps to complete lr and ws schedule
