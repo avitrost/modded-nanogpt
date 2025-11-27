@@ -851,7 +851,7 @@ class CausalSelfAttention(nn.Module):
         # label module to enable custom optimizer sizing
         self.attn_gate.weight.label = 'attn_gate'
         self.orthogonal_basis = orthogonal(nn.Linear(self.head_dim, self.head_dim))  # orthogonal parametrization
-        self.orthogonal_basis.label = 'orthogonal_basis'
+        self.orthogonal_basis.parametrizations.weight.original.label = 'orthogonal_basis'
 
     def forward(self, x: Tensor, attn_args: AttnArgs):
         B, T = x.size(0), x.size(1) # batch size, sequence length
